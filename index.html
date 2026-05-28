@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Digital Waste Day – Finanzkalkulator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ec-orange: #EC6500;
+    --ec-orange-dim: rgba(236,101,0,0.12);
+    --ec-orange-glow: rgba(236,101,0,0.35);
+    --bg: #0f0f0f;
+    --surface: #181818;
+    --surface2: #222222;
+    --border: #2e2e2e;
+    --text: #f0ede8;
+    --text-dim: #888;
+    --text-muted: #555;
+    --green: #3ddc84;
+    --red: #ff5f57;
+    --yellow: #ffd60a;
+    --mono: 'DM Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+    --display: 'Syne', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    padding: 0 0 80px 0;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 28px 40px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-dot {
+    width: 14px; height: 14px;
+    background: var(--ec-orange);
+    border-radius: 50%;
+    box-shadow: 0 0 12px var(--ec-orange-glow);
+    flex-shrink: 0;
+  }
+  .header h1 {
+    font-family: var(--display);
+    font-size: 1.05rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+  .header-sub {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    margin-left: auto;
+    letter-spacing: 0.04em;
+  }
+
+  /* LAYOUT */
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 0;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 40px;
+    align-items: start;
+  }
+
+  /* RESULT PANEL – sticky */
+  .result-panel {
+    position: sticky;
+    top: 77px;
+    padding: 32px 0 0 32px;
+  }
+
+  /* PANELS */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-top: 28px;
+    overflow: hidden;
+  }
+  .panel-header {
+    padding: 14px 24px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .panel-number {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    color: var(--ec-orange);
+    letter-spacing: 0.08em;
+  }
+  .panel-title {
+    font-family: var(--display);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .panel-body {
+    padding: 24px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 24px;
+  }
+  .panel-body.single { grid-template-columns: 1fr; }
+  .panel-body.three  { grid-template-columns: 1fr 1fr 1fr; }
+
+  /* FIELDS */
+  .field { display: flex; flex-direction: column; gap: 8px; }
+  .field label {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .field .hint {
+    font-size: 0.62rem;
+    color: var(--text-muted);
+    margin-top: -4px;
+    font-style: italic;
+  }
+
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--ec-orange);
+    box-shadow: 0 0 8px var(--ec-orange-glow);
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.3); }
+  input[type="range"]::-webkit-slider-runnable-track {
+    background: linear-gradient(to right, var(--ec-orange) 0%, var(--ec-orange) var(--pct, 0%), var(--border) var(--pct, 0%), var(--border) 100%);
+    height: 3px;
+    border-radius: 2px;
+  }
+
+  .num-val {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--ec-orange);
+    min-width: 42px;
+    text-align: right;
+    font-weight: 500;
+  }
+
+  input[type="number"] {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    padding: 8px 12px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input[type="number"]:focus { border-color: var(--ec-orange); }
+  input[type="number"]::-webkit-inner-spin-button { opacity: 0.4; }
+
+  .input-unit {
+    display: flex;
+    align-items: center;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .input-unit input[type="number"] {
+    border: none;
+    border-radius: 0;
+    width: 100%;
+    padding: 8px 10px;
+  }
+  .input-unit .unit {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    padding: 0 10px 0 4px;
+    white-space: nowrap;
+  }
+
+  /* DIVIDER */
+  .divider {
+    grid-column: 1 / -1;
+    height: 1px;
+    background: var(--border);
+    margin: 4px 0;
+  }
+
+  /* SECTION LABEL */
+  .section-label {
+    grid-column: 1 / -1;
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--ec-orange);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding-top: 4px;
+  }
+
+  /* WARNING CHIP */
+  .warn-chip {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--yellow);
+    background: rgba(255,214,10,0.08);
+    border: 1px solid rgba(255,214,10,0.2);
+    border-radius: 2px;
+    padding: 3px 8px;
+    display: inline-block;
+    margin-top: 2px;
+  }
+
+  /* RESULT CARD */
+  .result-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .result-header {
+    background: var(--ec-orange);
+    padding: 14px 20px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .result-header span {
+    font-family: var(--display);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: white;
+  }
+
+  .result-section {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .result-section:last-child { border-bottom: none; }
+  .result-section-label {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 3px 0;
+  }
+  .result-row .lbl {
+    font-size: 0.73rem;
+    color: var(--text-dim);
+    font-weight: 300;
+    flex: 1;
+    padding-right: 8px;
+  }
+  .result-row .lbl-sub {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    flex: 1;
+    padding-right: 8px;
+    padding-left: 12px;
+    font-style: italic;
+  }
+  .result-row .val {
+    font-family: var(--mono);
+    font-size: 0.73rem;
+    color: var(--text);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .result-row .val-sub {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+  .result-row.total .lbl {
+    font-weight: 500;
+    color: var(--text);
+    font-size: 0.8rem;
+  }
+  .result-row.total .val {
+    font-size: 0.9rem;
+    color: var(--ec-orange);
+  }
+
+  /* BIG NUMBER */
+  .big-number-wrap {
+    padding: 20px 20px 16px 20px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .big-label {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .big-value {
+    font-family: var(--display);
+    font-size: 2.4rem;
+    font-weight: 800;
+    transition: color 0.3s;
+    letter-spacing: -0.01em;
+  }
+  .big-value.pos { color: var(--green); }
+  .big-value.neg { color: var(--red); }
+  .big-value.zero { color: var(--yellow); }
+
+  /* BREAK-EVEN BAR */
+  .be-section { padding: 16px 20px; }
+  .be-bar-wrap {
+    background: var(--surface2);
+    border-radius: 3px;
+    height: 10px;
+    margin: 8px 0;
+    overflow: hidden;
+    position: relative;
+  }
+  .be-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.4s ease, background 0.3s;
+    background: var(--ec-orange);
+  }
+  .be-bar-fill.over { background: var(--green); }
+  .be-bar-fill.under { background: var(--red); }
+  .be-row {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 0.63rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+  .be-row span:last-child { color: var(--text-dim); }
+
+  /* STATUS BADGE */
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border-radius: 2px;
+    font-weight: 500;
+    margin-top: 8px;
+  }
+  .status-badge.profit {
+    background: rgba(61,220,132,0.1);
+    color: var(--green);
+    border: 1px solid rgba(61,220,132,0.25);
+  }
+  .status-badge.loss {
+    background: rgba(255,95,87,0.1);
+    color: var(--red);
+    border: 1px solid rgba(255,95,87,0.25);
+  }
+  .status-badge.breakeven {
+    background: rgba(255,214,10,0.1);
+    color: var(--yellow);
+    border: 1px solid rgba(255,214,10,0.25);
+  }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  /* PARTICIPANTS DETAIL CHIPS */
+  .chip-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+  }
+  .chip {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    padding: 3px 8px;
+    border-radius: 2px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+  }
+  .chip span { color: var(--text); font-weight: 500; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-dot"></div>
+  <h1>Digital Waste Day — Finanzkalkulator</h1>
+  <div class="header-sub">Entsorger Circle × bvse × ak dmaw · Do. 17.09.2026</div>
+</div>
+
+<div class="layout">
+
+  <!-- LEFT: INPUTS -->
+  <div class="inputs-col">
+
+    <!-- PANEL 1: TEILNEHMER -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-number">01</span>
+        <span class="panel-title">Teilnehmer (Entsorger &amp; Recycler)</span>
+      </div>
+      <div class="panel-body single" style="gap:10px">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;align-items:end">
+          <div class="field">
+            <label>Anzahl Vor-Ort</label>
+            <div class="input-unit">
+              <input type="number" id="nPresenz" value="125" min="0" step="1">
+              <span class="unit">Pers.</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Anzahl Online</label>
+            <div class="input-unit">
+              <input type="number" id="nOnline" value="125" min="0" step="1">
+              <span class="unit">Pers.</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Gesamt</label>
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;">
+              <span id="totalPaxDisplay" style="font-family:var(--mono);font-size:0.85rem;color:var(--ec-orange);font-weight:500;">250</span>
+              <span style="font-family:var(--mono);font-size:0.7rem;color:var(--text-muted)">Teiln.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="section-label">Rabatt-Anteile — PRÄSENZ</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+          <div class="field">
+            <label>EC-Mitglieder</label>
+            <div class="input-row">
+              <input type="range" id="pctEcPresenz" min="0" max="100" value="15" step="1">
+              <span class="num-val" id="pctEcPresenzVal">15%</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>bvse / ak dmaw</label>
+            <div class="input-row">
+              <input type="range" id="pctBvsePresenz" min="0" max="100" value="20" step="1">
+              <span class="num-val" id="pctBvsePresenzVal">20%</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Early Bird</label>
+            <div class="input-row">
+              <input type="range" id="pctEbPresenz" min="0" max="100" value="25" step="1">
+              <span class="num-val" id="pctEbPresenzVal">25%</span>
+            </div>
+          </div>
+        </div>
+        <div id="warnPresenz" class="warn-chip" style="display:none">⚠ Summe der Rabatt-Anteile &gt; 100% — bitte korrigieren</div>
+        <div class="chip-row" id="presenzChips"></div>
+
+        <div class="divider"></div>
+        <div class="section-label">Rabatt-Anteile — ONLINE</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+          <div class="field">
+            <label>EC-Mitglieder</label>
+            <div class="input-row">
+              <input type="range" id="pctEcOnline" min="0" max="100" value="20" step="1">
+              <span class="num-val" id="pctEcOnlineVal">20%</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>bvse / ak dmaw</label>
+            <div class="input-row">
+              <input type="range" id="pctBvseOnline" min="0" max="100" value="25" step="1">
+              <span class="num-val" id="pctBvseOnlineVal">25%</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Early Bird</label>
+            <div class="input-row">
+              <input type="range" id="pctEbOnline" min="0" max="100" value="30" step="1">
+              <span class="num-val" id="pctEbOnlineVal">30%</span>
+            </div>
+          </div>
+        </div>
+        <div id="warnOnline" class="warn-chip" style="display:none">⚠ Summe der Rabatt-Anteile &gt; 100% — bitte korrigieren</div>
+        <div class="chip-row" id="onlineChips"></div>
+      </div>
+    </div>
+
+    <!-- PANEL 2: PREISE TEILNEHMER -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-number">02</span>
+        <span class="panel-title">Ticketpreise — Teilnehmer</span>
+      </div>
+      <div class="panel-body">
+        <div class="section-label" style="grid-column:1/-1">Präsenz</div>
+        <div class="field">
+          <label>Regulär</label>
+          <div class="input-unit">
+            <input type="number" id="pricePresenzReg" value="790" min="0" step="10">
+            <span class="unit">€</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>EC-Mitglieder</label>
+          <div class="input-unit">
+            <input type="number" id="pricePresenzEC" value="0" min="0" step="10">
+            <span class="unit">€</span>
+          </div>
+          <div class="hint">Im Konzept: kostenlos (0 €)</div>
+        </div>
+        <div class="field">
+          <label>Early-Bird-Rabatt</label>
+          <div class="input-unit">
+            <input type="number" id="ebRabattPresenz" value="150" min="0" step="10">
+            <span class="unit">€ Abzug</span>
+          </div>
+          <div class="hint" id="priceEbPresenzHint">→ 640 € Early-Bird</div>
+        </div>
+        <div class="field">
+          <label>bvse / ak dmaw Rabatt</label>
+          <div class="input-unit">
+            <input type="number" id="bvseRabattPresenz" value="25" min="0" max="100" step="1">
+            <span class="unit">%</span>
+          </div>
+          <div class="hint" id="priceBvsePresenzHint">→ 593 € für bvse / ak dmaw</div>
+        </div>
+        <div class="divider"></div>
+        <div class="section-label" style="grid-column:1/-1">Online</div>
+        <div class="field">
+          <label>Regulär</label>
+          <div class="input-unit">
+            <input type="number" id="priceOnlineReg" value="390" min="0" step="10">
+            <span class="unit">€</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>EC-Mitglieder</label>
+          <div class="input-unit">
+            <input type="number" id="priceOnlineEC" value="0" min="0" step="10">
+            <span class="unit">€</span>
+          </div>
+          <div class="hint">Im Konzept: kostenlos (0 €)</div>
+        </div>
+        <div class="field">
+          <label>Early-Bird-Rabatt</label>
+          <div class="input-unit">
+            <input type="number" id="ebRabattOnline" value="100" min="0" step="10">
+            <span class="unit">€ Abzug</span>
+          </div>
+          <div class="hint" id="priceEbOnlineHint">→ 290 € Early-Bird</div>
+        </div>
+        <div class="field">
+          <label>bvse / ak dmaw Rabatt</label>
+          <div class="input-unit">
+            <input type="number" id="bvseRabattOnline" value="25" min="0" max="100" step="1">
+            <span class="unit">%</span>
+          </div>
+          <div class="hint" id="priceBvseOnlineHint">→ 293 € für bvse / ak dmaw</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL 3: ANBIETER -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-number">03</span>
+        <span class="panel-title">Anbieter / Lösungsanbieter</span>
+      </div>
+      <div class="panel-body">
+        <div class="field">
+          <label>Anbieter gesamt</label>
+          <div class="input-row">
+            <input type="range" id="totalAnbieter" min="0" max="60" value="29" step="1">
+            <span class="num-val" id="totalAnbieterVal">29</span>
+          </div>
+          <div class="hint">Laut Agenda: 29 Slots</div>
+        </div>
+        <div class="field">
+          <label>davon EC-Mitglieder</label>
+          <div class="input-row">
+            <input type="range" id="anbieterEC" min="0" max="60" value="10" step="1">
+            <span class="num-val" id="anbieterECVal">10</span>
+          </div>
+          <div class="hint">Ticket: kostenlos (1 Person)</div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="section-label" style="grid-column:1/-1">Anbieter-Ticketpreis (Nicht-Mitglieder)</div>
+        <div class="field">
+          <label>Preis Nicht-Mitglied (inkl. 2 Tickets)</label>
+          <div class="input-unit">
+            <input type="number" id="priceAnbieterNM" value="1580" min="0" step="10">
+            <span class="unit">€</span>
+          </div>
+          <div class="hint">Standard: 2× Präsenz-Regulär</div>
+        </div>
+        <div class="field">
+          <label>Preis EC-Mitglied (zusätzl. Personen)</label>
+          <div class="input-unit">
+            <input type="number" id="priceAnbieterEC" value="390" min="0" step="10">
+            <span class="unit">€ / Person</span>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="section-label" style="grid-column:1/-1">Messestände</div>
+        <div class="field">
+          <label>Messestände Mitglieder</label>
+          <div class="input-row">
+            <input type="range" id="standEC" min="0" max="30" value="5" step="1">
+            <span class="num-val" id="standECVal">5</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Messestände Nicht-Mitglieder</label>
+          <div class="input-row">
+            <input type="range" id="standNM" min="0" max="30" value="8" step="1">
+            <span class="num-val" id="standNMVal">8</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Preis Messestand Mitglied</label>
+          <div class="input-unit">
+            <input type="number" id="priceStandEC" value="500" min="0" step="50">
+            <span class="unit">€</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Preis Messestand Nicht-Mitglied</label>
+          <div class="input-unit">
+            <input type="number" id="priceStandNM" value="2000" min="0" step="50">
+            <span class="unit">€</span>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="section-label" style="grid-column:1/-1">Sondersponsoring</div>
+        <div class="field" style="grid-column:1/-1">
+          <label>Sonstige Sponsoring-Einnahmen (z.B. Abendevent)</label>
+          <div class="input-unit">
+            <input type="number" id="sponsoring" value="0" min="0" step="500">
+            <span class="unit">€</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL 4: KOSTEN -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-number">04</span>
+        <span class="panel-title">Kosten</span>
+      </div>
+      <div class="panel-body">
+        <div class="field">
+          <label>Kosten Vor-Ort</label>
+          <div class="input-unit">
+            <input type="number" id="costVorOrt" value="29500" min="0" step="500">
+            <span class="unit">€</span>
+          </div>
+          <div class="hint">Location, Catering, Shuttle, Marketing, Moderation …</div>
+        </div>
+        <div class="field">
+          <label>Kosten Hybrid-Technik</label>
+          <div class="input-unit">
+            <input type="number" id="costHybrid" value="3500" min="0" step="250">
+            <span class="unit">€</span>
+          </div>
+          <div class="hint">Streaming, Online-Plattform, App &amp; IT …</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end inputs-col -->
+
+  <!-- RIGHT: RESULTS -->
+  <div class="result-panel">
+    <div class="result-card">
+      <div class="result-header">
+        <span>Ergebnis</span>
+      </div>
+
+      <!-- BIG NUMBER -->
+      <div class="big-number-wrap">
+        <div class="big-label">Ergebnis vor Steuer</div>
+        <div class="big-value" id="bigResult">+0 €</div>
+        <div style="display:flex;justify-content:center;margin-top:6px">
+          <div class="status-badge" id="statusBadge"><div class="status-dot"></div><span id="statusText">–</span></div>
+        </div>
+      </div>
+
+      <!-- EINNAHMEN -->
+      <div class="result-section">
+        <div class="result-section-label">Einnahmen</div>
+        <div class="result-row">
+          <span class="lbl">Tickets Präsenz</span>
+          <span class="val" id="rPresenz">–</span>
+        </div>
+        <div class="result-row">
+          <span class="lbl-sub">→ regulär</span>
+          <span class="val-sub" id="rPresenzReg">–</span>
+        </div>
+        <div class="result-row">
+          <span class="lbl-sub">→ EC-Mitglieder</span>
+          <span class="val-sub" id="rPresenzEC">–</span>
+        </div>
+        <div class="result-row">
+          <span class="lbl-sub">→ bvse / ak dmaw</span>
+          <span class="val-sub" id="rPresenzBvse">–</span>
+        </div>
+        <div class="result-row">
+          <span class="lbl-sub">→ Early Bird</span>
+          <span class="val-sub" id="rPresenzEB">–</span>
+        </div>
+        <div style="height:8px"></div>
+        <div class="result-row">
+          <span class="lbl">Tickets Online</span>
+          <span class="val" id="rOnline">–</span>
+        </div>
+        <div class="result-row">
+          <span class="lbl-sub">→ regulär</span>
+          <span class="val-sub" id="rOnlineReg">–</span>
+        </div>
+        <div class="result-row">
+          <span class="lbl-sub">→ EC-Mitglieder</span>
+          <span class="val-sub" id="rOnlineEC">–</span>
+        </div>
+        <div class="result-row">
+          <span class="lbl-sub">→ bvse / ak dmaw</span>
+          <span class="val-sub" id="rOnlineBvse">–</span>
+        </div>
+        <div class="result-row">
+          <span class="lbl-sub">→ Early Bird</span>
+          <span class="val-sub" id="rOnlineEB">–</span>
+        </div>
+        <div style="height:8px"></div>
+        <div class="result-row">
+          <span class="lbl">Anbieter-Tickets</span>
+          <span class="val" id="rAnbieter">–</span>
+        </div>
+        <div class="result-row">
+          <span class="lbl">Messestände</span>
+          <span class="val" id="rStand">–</span>
+        </div>
+        <div class="result-row">
+          <span class="lbl">Sponsoring</span>
+          <span class="val" id="rSponsoring">–</span>
+        </div>
+        <div style="height:6px;border-top:1px solid var(--border);margin-top:8px;padding-top:8px"></div>
+        <div class="result-row total">
+          <span class="lbl">Gesamteinnahmen</span>
+          <span class="val" id="rTotal">–</span>
+        </div>
+      </div>
+
+      <!-- KOSTEN -->
+      <div class="result-section">
+        <div class="result-section-label">Kosten</div>
+        <div class="result-row">
+          <span class="lbl">Vor-Ort</span>
+          <span class="val" id="cVorOrt">–</span>
+        </div>
+        <div class="result-row">
+          <span class="lbl">Hybrid-Technik</span>
+          <span class="val" id="cHybrid">–</span>
+        </div>
+        <div style="height:6px;border-top:1px solid var(--border);margin-top:8px;padding-top:8px"></div>
+        <div class="result-row total">
+          <span class="lbl">Gesamtkosten</span>
+          <span class="val" style="color:var(--red)" id="cTotal">–</span>
+        </div>
+      </div>
+
+      <!-- BREAK-EVEN -->
+      <div class="be-section">
+        <div class="result-section-label">Break-Even-Analyse</div>
+        <div class="result-row">
+          <span class="lbl" style="font-size:0.7rem">Deckung (Einnahmen / Kosten)</span>
+          <span class="val" id="beRatio">–</span>
+        </div>
+        <div class="be-bar-wrap">
+          <div class="be-bar-fill" id="beBar" style="width:0%"></div>
+        </div>
+        <div class="be-row">
+          <span id="beLeft">0 €</span>
+          <span id="beRight">–</span>
+        </div>
+        <div style="height:12px"></div>
+        <div class="result-row">
+          <span class="lbl" style="font-size:0.7rem">Break-Even bei ø-Erlös/Pax</span>
+          <span class="val" id="beAvgRevPax">–</span>
+        </div>
+        <div class="result-row">
+          <span class="lbl" style="font-size:0.7rem">→ mind. Teilnehmer nötig</span>
+          <span class="val" id="bePaxNeeded" style="color:var(--yellow)">–</span>
+        </div>
+        <div class="result-row">
+          <span class="lbl" style="font-size:0.7rem">→ aktuell konfiguriert</span>
+          <span class="val" id="bePaxCurrent">–</span>
+        </div>
+      </div>
+
+    </div><!-- end result-card -->
+  </div><!-- end result-panel -->
+
+</div><!-- end layout -->
+
+<script>
+  // ---- HELPERS ----
+  const fmt = v => new Intl.NumberFormat('de-DE', {style:'currency', currency:'EUR', maximumFractionDigits:0}).format(v);
+  const fmtN = v => new Intl.NumberFormat('de-DE').format(v);
+  const pct = v => Math.round(v) + '%';
+  const $ = id => document.getElementById(id);
+
+  // ---- RANGE TRACK FILL ----
+  function updateTrack(el) {
+    const min = +el.min, max = +el.max, val = +el.value;
+    const p = ((val - min) / (max - min)) * 100;
+    el.style.setProperty('--pct', p + '%');
+  }
+
+  // ---- SLIDER ↔ DISPLAY ----
+  function bindSlider(id, displayId, suffix, onUpdate) {
+    const el = $(id), disp = $(displayId);
+    function update() {
+      updateTrack(el);
+      disp.textContent = el.value + (suffix || '');
+      if (onUpdate) onUpdate();
+      calc();
+    }
+    el.addEventListener('input', update);
+    update();
+  }
+
+  // ---- NUMBER INPUTS ----
+  document.querySelectorAll('input[type=number]').forEach(el => {
+    el.addEventListener('input', calc);
+  });
+
+  // ---- BIND ALL SLIDERS ----
+  bindSlider('pctEcPresenz','pctEcPresenzVal','%');
+  bindSlider('pctBvsePresenz','pctBvsePresenzVal','%');
+  bindSlider('pctEbPresenz','pctEbPresenzVal','%');
+  bindSlider('pctEcOnline','pctEcOnlineVal','%');
+  bindSlider('pctBvseOnline','pctBvseOnlineVal','%');
+  bindSlider('pctEbOnline','pctEbOnlineVal','%');
+  bindSlider('totalAnbieter','totalAnbieterVal','');
+  bindSlider('anbieterEC','anbieterECVal','');
+  bindSlider('standEC','standECVal','');
+  bindSlider('standNM','standNMVal','');
+
+  // ---- MAIN CALC ----
+  function calc() {
+    // -- inputs --
+    const nPresenz  = Math.max(0, +$('nPresenz').value || 0);
+    const nOnline   = Math.max(0, +$('nOnline').value  || 0);
+    const totalPax  = nPresenz + nOnline;
+    $('totalPaxDisplay').textContent = totalPax;
+
+    // Präsenz breakdown
+    const pEcP  = +$('pctEcPresenz').value / 100;
+    const pBvP  = +$('pctBvsePresenz').value / 100;
+    const pEbP  = +$('pctEbPresenz').value / 100;
+    const sumP  = pEcP + pBvP + pEbP;
+    const pRegP = Math.max(0, 1 - sumP);
+
+    $('warnPresenz').style.display = sumP > 1 ? 'inline-block' : 'none';
+
+    const nEcP  = Math.round(nPresenz * pEcP);
+    const nBvP  = Math.round(nPresenz * pBvP);
+    const nEbP  = Math.round(nPresenz * pEbP);
+    const nRegP = Math.max(0, nPresenz - nEcP - nBvP - nEbP);
+
+    // Online breakdown
+    const pEcO  = +$('pctEcOnline').value / 100;
+    const pBvO  = +$('pctBvseOnline').value / 100;
+    const pEbO  = +$('pctEbOnline').value / 100;
+    const sumO  = pEcO + pBvO + pEbO;
+    const pRegO = Math.max(0, 1 - sumO);
+
+    $('warnOnline').style.display = sumO > 1 ? 'inline-block' : 'none';
+
+    const nEcO  = Math.round(nOnline * pEcO);
+    const nBvO  = Math.round(nOnline * pBvO);
+    const nEbO  = Math.round(nOnline * pEbO);
+    const nRegO = Math.max(0, nOnline - nEcO - nBvO - nEbO);
+
+    // -- Chips --
+    $('presenzChips').innerHTML =
+      `<div class="chip">Regulär: <span>${nRegP}</span></div>` +
+      `<div class="chip">EC: <span>${nEcP}</span></div>` +
+      `<div class="chip">bvse/dmaw: <span>${nBvP}</span></div>` +
+      `<div class="chip">Early Bird: <span>${nEbP}</span></div>`;
+    $('onlineChips').innerHTML =
+      `<div class="chip">Regulär: <span>${nRegO}</span></div>` +
+      `<div class="chip">EC: <span>${nEcO}</span></div>` +
+      `<div class="chip">bvse/dmaw: <span>${nBvO}</span></div>` +
+      `<div class="chip">Early Bird: <span>${nEbO}</span></div>`;
+
+    // -- Preise --
+    const prPresenzReg  = +$('pricePresenzReg').value;
+    const prPresenzEC   = +$('pricePresenzEC').value;
+    const ebPresenz     = +$('ebRabattPresenz').value;
+    const bvseRabPresenz = +$('bvseRabattPresenz').value / 100;
+    const prPresenzEB   = Math.max(0, prPresenzReg - ebPresenz);
+    const prPresenzBvse = prPresenzReg * (1 - bvseRabPresenz);
+
+    $('priceEbPresenzHint').textContent  = '→ ' + fmt(prPresenzEB)  + ' Early-Bird';
+    $('priceBvsePresenzHint').textContent = '→ ' + fmt(prPresenzBvse) + ' für bvse / ak dmaw';
+
+    const prOnlineReg   = +$('priceOnlineReg').value;
+    const prOnlineEC    = +$('priceOnlineEC').value;
+    const ebOnline      = +$('ebRabattOnline').value;
+    const bvseRabOnline = +$('bvseRabattOnline').value / 100;
+    const prOnlineEB    = Math.max(0, prOnlineReg - ebOnline);
+    const prOnlineBvse  = prOnlineReg * (1 - bvseRabOnline);
+
+    $('priceEbOnlineHint').textContent  = '→ ' + fmt(prOnlineEB)  + ' Early-Bird';
+    $('priceBvseOnlineHint').textContent = '→ ' + fmt(prOnlineBvse) + ' für bvse / ak dmaw';
+
+    // -- EINNAHMEN TEILNEHMER --
+    const revPresenzReg  = nRegP * prPresenzReg;
+    const revPresenzEC   = nEcP  * prPresenzEC;
+    const revPresenzBvse = nBvP  * prPresenzBvse;
+    const revPresenzEB   = nEbP  * prPresenzEB;
+    const revPresenzTotal = revPresenzReg + revPresenzEC + revPresenzBvse + revPresenzEB;
+
+    const revOnlineReg   = nRegO * prOnlineReg;
+    const revOnlineEC    = nEcO  * prOnlineEC;
+    const revOnlineBvse  = nBvO  * prOnlineBvse;
+    const revOnlineEB    = nEbO  * prOnlineEB;
+    const revOnlineTotal  = revOnlineReg + revOnlineEC + revOnlineBvse + revOnlineEB;
+
+    // -- EINNAHMEN ANBIETER --
+    const totalAnbieter = +$('totalAnbieter').value;
+    const anbieterEC    = Math.min(+$('anbieterEC').value, totalAnbieter);
+    const anbieterNM    = totalAnbieter - anbieterEC;
+    const prAnbieterNM  = +$('priceAnbieterNM').value;
+    const revAnbieter   = anbieterNM * prAnbieterNM; // EC: 1 kostenlos
+
+    // -- EINNAHMEN STAND --
+    const standEC   = +$('standEC').value;
+    const standNM   = +$('standNM').value;
+    const prStandEC = +$('priceStandEC').value;
+    const prStandNM = +$('priceStandNM').value;
+    const revStand  = standEC * prStandEC + standNM * prStandNM;
+
+    // -- SPONSORING --
+    const revSponsoring = +$('sponsoring').value;
+
+    // -- TOTAL REV --
+    const totalRev = revPresenzTotal + revOnlineTotal + revAnbieter + revStand + revSponsoring;
+
+    // -- KOSTEN --
+    const cVorOrt  = +$('costVorOrt').value;
+    const cHybrid  = +$('costHybrid').value;
+    const totalCost = cVorOrt + cHybrid;
+
+    const result = totalRev - totalCost;
+
+    // -- UPDATE DISPLAY --
+    // Einnahmen
+    $('rPresenz').textContent     = fmt(revPresenzTotal);
+    $('rPresenzReg').textContent  = fmt(revPresenzReg)  + ' (' + nRegP + ' Pers.)';
+    $('rPresenzEC').textContent   = fmt(revPresenzEC)   + ' (' + nEcP  + ' Pers.)';
+    $('rPresenzBvse').textContent = fmt(revPresenzBvse) + ' (' + nBvP  + ' Pers.)';
+    $('rPresenzEB').textContent   = fmt(revPresenzEB)   + ' (' + nEbP  + ' Pers.)';
+    $('rOnline').textContent      = fmt(revOnlineTotal);
+    $('rOnlineReg').textContent   = fmt(revOnlineReg)   + ' (' + nRegO + ' Pers.)';
+    $('rOnlineEC').textContent    = fmt(revOnlineEC)    + ' (' + nEcO  + ' Pers.)';
+    $('rOnlineBvse').textContent  = fmt(revOnlineBvse)  + ' (' + nBvO  + ' Pers.)';
+    $('rOnlineEB').textContent    = fmt(revOnlineEB)    + ' (' + nEbO  + ' Pers.)';
+    $('rAnbieter').textContent    = fmt(revAnbieter);
+    $('rStand').textContent       = fmt(revStand);
+    $('rSponsoring').textContent  = fmt(revSponsoring);
+    $('rTotal').textContent       = fmt(totalRev);
+
+    // Kosten
+    $('cVorOrt').textContent  = fmt(cVorOrt);
+    $('cHybrid').textContent  = fmt(cHybrid);
+    $('cTotal').textContent   = fmt(totalCost);
+
+    // Big result
+    const bigEl = $('bigResult');
+    bigEl.textContent = (result >= 0 ? '+' : '') + fmt(result);
+    bigEl.className = 'big-value ' + (result > 0 ? 'pos' : result < 0 ? 'neg' : 'zero');
+
+    const badge = $('statusBadge');
+    const statusTxt = $('statusText');
+    if (result > 500) {
+      badge.className = 'status-badge profit';
+      statusTxt.textContent = 'Im Gewinn';
+    } else if (result < -500) {
+      badge.className = 'status-badge loss';
+      statusTxt.textContent = 'Verlust';
+    } else {
+      badge.className = 'status-badge breakeven';
+      statusTxt.textContent = 'Break-Even';
+    }
+
+    // Break-Even bar
+    const ratio = totalCost > 0 ? (totalRev / totalCost) : 0;
+    const barPct = Math.min(100, ratio * 100);
+    const barEl = $('beBar');
+    barEl.style.width = barPct + '%';
+    barEl.className = 'be-bar-fill ' + (ratio >= 1 ? 'over' : 'under');
+    $('beRatio').textContent = (ratio * 100).toFixed(1) + '%';
+    $('beLeft').textContent = fmt(totalRev);
+    $('beRight').textContent = 'Ziel: ' + fmt(totalCost);
+
+    // Break-Even Teilnehmer
+    // avg revenue per paying participant (excluding Anbieter & Stands & Sponsoring)
+    const paxRevenue = revPresenzTotal + revOnlineTotal;
+    const avgRevPax = totalPax > 0 ? (paxRevenue / totalPax) : 0;
+    const fixedCostRemainder = totalCost - revAnbieter - revStand - revSponsoring;
+    const paxNeeded = avgRevPax > 0 ? Math.ceil(fixedCostRemainder / avgRevPax) : '∞';
+    $('beAvgRevPax').textContent = fmt(avgRevPax) + ' / Teiln.';
+    $('bePaxNeeded').textContent = typeof paxNeeded === 'number' ? fmtN(paxNeeded) + ' Teiln.' : '∞';
+    $('bePaxCurrent').textContent = fmtN(totalPax) + ' Teiln.';
+  }
+
+  // initial run
+  calc();
+</script>
+</body>
+</html>
