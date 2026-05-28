@@ -433,6 +433,81 @@
     color: var(--text-dim);
   }
   .chip span { color: var(--text); font-weight: 500; }
+
+  /* SAVE BUTTON */
+  #saveBtn {
+    margin-left: 16px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--ec-orange);
+    color: white;
+    border: none;
+    border-radius: 3px;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    padding: 8px 14px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: opacity 0.15s, transform 0.1s;
+    white-space: nowrap;
+  }
+  #saveBtn:hover { opacity: 0.85; transform: translateY(-1px); }
+  #saveBtn:active { transform: translateY(0); }
+
+  /* TOAST */
+  #toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--green);
+    color: #0f0f0f;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    padding: 10px 20px;
+    border-radius: 3px;
+    opacity: 0;
+    transition: opacity 0.25s, transform 0.25s;
+    pointer-events: none;
+    z-index: 999;
+  }
+  #toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* URL DISPLAY */
+  .url-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+  }
+  .url-row span {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+  }
+  .url-row .url-label {
+    font-size: 0.58rem;
+    color: var(--ec-orange);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
 </style>
 </head>
 <body>
@@ -441,6 +516,11 @@
   <div class="header-dot"></div>
   <h1>Digital Waste Day — Finanzkalkulator</h1>
   <div class="header-sub">Entsorger Circle × bvse × ak dmaw · Do. 17.09.2026</div>
+  <button id="saveBtn" onclick="saveToUrl()">
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><path d="M10.5 1H3.5C2.67 1 2 1.67 2 2.5v11C2 14.33 2.67 15 3.5 15h9c.83 0 1.5-.67 1.5-1.5V5L10.5 1z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><polyline points="10 1 10 5 14 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Stand speichern &amp; Link kopieren
+  </button>
+  <div id="toast">✓ Link in Zwischenablage</div>
 </div>
 
 <div class="layout">
@@ -1070,6 +1150,74 @@
     $('bePaxNeeded').textContent = typeof paxNeeded === 'number' ? fmtN(paxNeeded) + ' Teiln.' : '∞';
     $('bePaxCurrent').textContent = fmtN(totalPax) + ' Teiln.';
   }
+
+
+  // ---- ALL INPUT IDS to save/restore ----
+  const SAVE_IDS = [
+    'nPresenz','nOnline',
+    'pctEcPresenz','pctBvsePresenz','pctEbPresenz',
+    'pctEcOnline','pctBvseOnline','pctEbOnline',
+    'pricePresenzReg','pricePresenzEC','ebRabattPresenz','bvseRabattPresenz',
+    'priceOnlineReg','priceOnlineEC','ebRabattOnline','bvseRabattOnline',
+    'totalAnbieter','anbieterEC',
+    'priceAnbieterNM','priceAnbieterEC',
+    'standEC','standNM','priceStandEC','priceStandNM',
+    'sponsoring',
+    'costVorOrt','costHybrid'
+  ];
+
+  function getState() {
+    const state = {};
+    SAVE_IDS.forEach(id => { const el = $(id); if (el) state[id] = el.value; });
+    return state;
+  }
+
+  function applyState(state) {
+    SAVE_IDS.forEach(id => {
+      if (state[id] !== undefined) {
+        const el = $(id);
+        if (!el) return;
+        el.value = state[id];
+        // re-trigger slider track for range inputs
+        if (el.type === 'range') {
+          updateTrack(el);
+          const dispId = id.replace('pct','pct').replace('total','total').replace('anbieter','anbieter').replace('stand','stand');
+          // update display spans
+          const suffixMap = {
+            pctEcPresenz:'%', pctBvsePresenz:'%', pctEbPresenz:'%',
+            pctEcOnline:'%',  pctBvseOnline:'%',  pctEbOnline:'%',
+            totalAnbieter:'', anbieterEC:'', standEC:'', standNM:''
+          };
+          const dispEl = $(id + 'Val');
+          if (dispEl) dispEl.textContent = el.value + (suffixMap[id] || '');
+        }
+      }
+    });
+  }
+
+  function saveToUrl() {
+    const state = getState();
+    const encoded = btoa(JSON.stringify(state));
+    const url = window.location.origin + window.location.pathname + '#' + encoded;
+    window.history.replaceState(null, '', url);
+    navigator.clipboard.writeText(url).catch(() => {});
+    const toast = $('toast');
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2500);
+  }
+
+  function loadFromUrl() {
+    const hash = window.location.hash.slice(1);
+    if (!hash) return false;
+    try {
+      const state = JSON.parse(atob(hash));
+      applyState(state);
+      return true;
+    } catch(e) { return false; }
+  }
+
+  // Load from URL on startup, then calc
+  loadFromUrl();
 
   // initial run
   calc();
